@@ -6,7 +6,9 @@
 
 ### 开始使用
 
-文档地址: https://graia.originpages.com/
+文档地址: https://graiaproject.github.io/Application/
+
+Tencent QQ 交流群: [邀请链接](https://jq.qq.com/?_wv=1027&k=VXp6plBD)
 
 #### 从 Pypi 安装
 ``` bash

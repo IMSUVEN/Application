@@ -1,11 +1,18 @@
-from typing import Union
+from typing import Any, Iterable, List, Union
 from graia.broadcast.entities.dispatcher import BaseDispatcher
 from graia.broadcast.interfaces.dispatcher import DispatcherInterface
 from .exceptions import (AccountMuted, AccountNotFound, InvaildArgument,
                          InvaildAuthkey, InvaildSession, NotSupportedVersion,
                          TooLongMessage, UnauthorizedSession, UnknownTarget)
 from .context import enter_context
+import inspect
 
+def applicationContextManager(func):
+    def wrapper(self, *args, **kwargs):
+        with enter_context(self):
+            return func(self, *args, **kwargs)
+    wrapper.__annotations__ = func.__annotations__
+    return wrapper
 
 def requireAuthenticated(func):
     def wrapper(self, *args, **kwargs):
@@ -71,7 +78,15 @@ def raise_for_return_code(code: Union[dict, int]):
         if exception_code:
             raise exception_code
 
+def print_traceback_javay():
+    stacks = inspect.stack()[1:]
+    for i in stacks:
+        print(f"    at [{i.filename}:{i.lineno}]")
+    print("\n")
+
 class AppMiddlewareAsDispatcher(BaseDispatcher):
+    always = True
+
     def __init__(self, app) -> None:
         self.app = app
 
@@ -86,3 +101,37 @@ def context_enter_auto(context):
                 return func(*args, **kwargs)
         return wrapper2
     return wrapper1
+
+def call_atonce(*args, **kwargs):
+    def wrapper(callable_target):
+        return callable_target(*args, **kwargs)
+    return wrapper
+
+class InsertGenerator:
+    base: Iterable[Any]
+    insert_items: List[Any]
+
+    def __init__(self, base_iterable: Iterable, pre_items: List[Any] = None) -> None:
+        self.base = base_iterable
+        self.insert_items = pre_items or []
+    
+    def __iter__(self):
+        for i in self.base:
+            if self.insert_items:
+                yield from self.insert_items.pop()
+            yield i
+        else:
+            if self.insert_items:
+                for i in self.insert_items[::-1]:
+                    yield from i
+
+class AutoUnpackTuple:
+    def __init__(self, base_iterable: Iterable, pre_items: List[Any] = None) -> None:
+        self.base = base_iterable
+    
+    def __iter__(self):
+        for i in self.base:
+            if isinstance(i, tuple):
+                yield from i
+                continue
+            yield i
